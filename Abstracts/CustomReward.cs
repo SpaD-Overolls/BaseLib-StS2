@@ -67,6 +67,7 @@ public abstract class CustomReward(Player player) : Reward(player)
     /// </example>
     public abstract CreateRewardFromSave<CustomReward> DeserializeMethod { get; }
 
+
     /// <summary>
     /// Base method to handle registering your reward for serializing and deserializing in <see cref="RewardSynchronizer"/>
     /// Override this if you wish to manually register your reward with <see cref="CustomRewardPatches.RegisterCustomReward(RewardType, CreateRewardFromSave&lt;CustomReward&gt;)"/>

@@ -1,6 +1,5 @@
 using BaseLib.Abstracts;
 using BaseLib.Utils;
-using BaseLib.Common.Rewards;
 using BaseLib.Extensions;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Multiplayer.Game;
