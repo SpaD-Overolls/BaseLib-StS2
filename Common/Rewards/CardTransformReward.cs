@@ -1,19 +1,19 @@
 using BaseLib.Abstracts;
 using BaseLib.Extensions;
 using BaseLib.Patches.Content;
+using MegaCrit.Sts2.Core.CardSelection;
+using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Factories;
 using MegaCrit.Sts2.Core.Localization;
+using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Multiplayer.Game;
+using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves.Runs;
-using MegaCrit.Sts2.Core.CardSelection;
-using MegaCrit.Sts2.Core.Combat;
-using MegaCrit.Sts2.Core.Factories;
-using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Multiplayer.Game;
-using MegaCrit.Sts2.Core.Nodes.CommonUi;
 
 namespace BaseLib.Common.Rewards;
 
@@ -32,6 +32,7 @@ public sealed class CardTransformReward(Player player) : CustomReward(player)
     /// A new <see cref="RewardType"/> defined with the <see cref="CustomEnumAttribute"/> attribute
     /// </summary>
     [CustomEnum] public static RewardType CardTransform;
+
     /// <summary>
     /// Reference to the <see cref="RewardType"/> <see cref="CardTransform"/> defined earlier
     /// </summary>
@@ -54,7 +55,7 @@ public sealed class CardTransformReward(Player player) : CustomReward(player)
     {
         get
         {
-            LocString locString = new LocString("gameplay_ui", "COMBAT_REWARD_CARD_TRANSFORM");
+            LocString locString = new LocString("gameplay_ui", "BASELIB-COMBAT_REWARD_CARD_TRANSFORM");
             locString.Add("cards", Amount);
             locString.Add("Upgrade", Upgrade);
             return locString;
@@ -86,7 +87,7 @@ public sealed class CardTransformReward(Player player) : CustomReward(player)
     /// <param name="save">The <see cref="SerializableReward"/> that was created and saved from
     /// <see cref="ToSerializable"/></param>
     /// <param name="player">The <see cref="Player"/> the reward belongs to</param>
-    public CardTransformReward CreateFromSerializable(SerializableReward save, Player player)
+    public static CardTransformReward CreateFromSerializable(SerializableReward save, Player player)
     {
         return new CardTransformReward(player) {
             // hijacking the gold amounts as a temp hack before worrying about extending the serialized values
@@ -100,73 +101,55 @@ public sealed class CardTransformReward(Player player) : CustomReward(player)
 
     /// <inheritdoc/>
     public override void MarkContentAsSeen() { }
-
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public override void Populate() {}
 
     /// <inheritdoc/>
     protected override async Task<bool> OnSelect()
     {
         BaseLibMain.Logger.Info("Obtained card transformation from reward");
-        return await RunManager.Instance.RewardSynchronizer.DoLocalCardTransform(Amount, true);
+        return await RunManager.Instance.RewardSynchronizer.DoUnsyncedCardTransform(Player, Amount, true);
     }
 }
 
 static class TransformRewardSynchronizerPatches
 {
-    /// <summary>
-    /// Method to handle transforming a card as a combat reward
-    /// </summary>
-    public static async Task<bool> DoLocalCardTransform(this RewardSynchronizer rewardSynchronizer, int amount = 1, bool upgrade = false)
+    extension(RewardSynchronizer rewardSynchronizer)
     {
-        CardTransformRewardMessage message = new CardTransformRewardMessage
+        /// <summary>
+        /// Transform a card for a specific player as a combat reward
+        /// This is allowed to be called without sending a message becasue transforming already sends it's own one
+        /// </summary>
+        public async Task<bool> DoUnsyncedCardTransform(Player player, int amount = 1, bool upgrade = false)
         {
-            Location = rewardSynchronizer._messageBuffer.CurrentLocation,
-            wasSkipped = false,
-            Upgrade = upgrade,
-            Amount = amount
-        };
-        BaseLibMain.Logger.Debug($"Transforming card for local player {rewardSynchronizer.LocalPlayer}");
-
-        CustomTargetedMessageWrapper.Send(message);
-        return await rewardSynchronizer.DoCardTransform(rewardSynchronizer.LocalPlayer, amount, upgrade);
-    }
-
-    /// <summary>
-    /// Transform a card for a specific player as a combat reward
-    /// </summary>
-    public static async Task<bool> DoCardTransform(this RewardSynchronizer rewardSynchronizer, Player player, int amount = 1, bool upgrade = false)
-    {
-        CardSelectorPrefs prefs = new CardSelectorPrefs(
-                upgrade
-                    ? CardSelectorPrefsExtensions.TransformAndUpgradeSelectionPrompt
-                    : CardSelectorPrefs.TransformSelectionPrompt,
-                1,
-                amount)
-        {
-            Cancelable = true,
-            RequireManualConfirmation = true
-        };
-
-        List<CardModel> cards = (await CardSelectCmd.FromDeckForTransformation(player, prefs)).ToList();
-
-        BaseLibMain.Logger.Debug($"Current combat state for transform rewards is: IsEnding={CombatManager.Instance.IsEnding}");
-        foreach (CardModel card in cards)
-        {
-            CardModel newCard = CardFactory.CreateRandomCardForTransform(
-                    card,
-                    isInCombat: false,
-                    player.RunState.Rng.Niche);
-
-            if (upgrade || card.IsUpgraded) // need a more robust handler for multi-upgrade at some point
+            var loc = upgrade ? CardSelectorPrefsExtensions.TransformAndUpgradeSelectionPrompt : CardSelectorPrefs.TransformSelectionPrompt;
+            CardSelectorPrefs prefs = new CardSelectorPrefs(loc, 1, amount)
             {
-                CardCmd.Upgrade(newCard);
+                Cancelable = true,
+                RequireManualConfirmation = true
+            };
+
+            List<CardModel> cards = (await CardSelectCmd.FromDeckForTransformation(player, prefs)).ToList();
+
+            BaseLibMain.Logger.Debug($"Current combat state for transform rewards is: IsEnding={CombatManager.Instance.IsEnding}");
+            foreach (CardModel card in cards)
+            {
+                CardModel newCard = CardFactory.CreateRandomCardForTransform(card, isInCombat: false, player.RunState.Rng.Niche);
+
+                // MAYBE: potentially add a toggle for keeping upgrade state;
+                // and a more robust handler for multi-upgrade cards/upgrading more than once?
+                if (upgrade)
+                {
+                    CardCmd.Upgrade(newCard);
+                }
+
+                // grid because horizontal is behind the reward screen overlay
+                await CardCmd.Transform(card, newCard, CardPreviewStyle.GridLayout);
+                BaseLibMain.Logger.Debug($"Player {player.NetId} transformed {card.Id} in their deck into {newCard.Id}" + (upgrade ? " and upgraded it." : "."));
             }
 
-            await CardCmd.Transform(card, newCard, CardPreviewStyle.GridLayout);
-            BaseLibMain.Logger.Debug($"Player {player.NetId} transformed {card.Id} in their deck into {newCard.Id}" + (upgrade ? " and upgraded it." : "."));
+            // Bool return decides whether the reward is "consumed" (disappears from the list)
+            return cards.Count > 0;
         }
-
-        return cards.Count > 0;
     }
 }
