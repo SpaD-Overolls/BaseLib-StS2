@@ -225,7 +225,7 @@ public abstract class CardModifier : AbstractModel, IComparable<CardModifier>
     /// <summary>
     /// Mostly unused; overridden just in case.
     /// </summary>
-    public override bool ShouldReceiveCombatHooks => true;
+    public override bool ShouldReceiveCombatHooks => Owner?.ShouldReceiveCombatHooks ?? false;
     private DynamicVarSet? _dynamicVars;
     
     public CardModel? Owner
