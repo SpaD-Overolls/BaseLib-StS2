@@ -390,7 +390,7 @@ internal class ControllerSingleCreatureTargetingPatch
     {
         var card = instance.Card;
         var cardNode = instance.CardNode;
-        if (card == null || BetaMainCompatibility.CardModel_.WrappedCombatState(card) == null || cardNode == null)
+        if (card?.CombatState == null || cardNode == null)
         {
             instance.CancelPlayCard();
             return;

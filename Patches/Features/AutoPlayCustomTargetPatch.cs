@@ -32,11 +32,11 @@ internal static class AutoPlayCustomTargetPatch
             var player = card.Owner;
             if (player?.RunState?.Rng == null) return;
 
-            var combatState = BetaMainCompatibility.CardModel_.WrappedCombatState(card);
+            var combatState = card.CombatState;
             if (combatState == null) return;
 
             var candidates = combatState.Creatures
-                .Where(creature => creature != null && creature.IsAlive && canTarget(creature, player))
+                .Where(creature => creature.IsAlive && canTarget(creature, player))
                 .ToList();
             if (candidates.Count == 0) return;
 
