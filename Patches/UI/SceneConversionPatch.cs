@@ -4,6 +4,7 @@ using BaseLib.Patches.Content;
 using BaseLib.Utils.NodeFactories;
 using Godot;
 using HarmonyLib;
+using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Models;
 
 namespace BaseLib.Patches.UI;
@@ -53,7 +54,7 @@ class RegisterSceneConversions
     [HarmonyPostfix]
     private static void EnsureScenePathsRegistered()
     {
-        foreach (var type in CustomContentDictionary.RegisteredTypes)
+        foreach (var type in ReflectionHelper.ModTypes)
         {
             if (!type.IsAssignableTo(typeof(ISceneConversions))) continue;
             
