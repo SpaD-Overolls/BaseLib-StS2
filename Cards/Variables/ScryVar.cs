@@ -21,7 +21,7 @@ public class ScryVar(decimal baseValue) : DynamicVar("Scry", baseValue)
     /// <param name="previewMode">The mode dictating how the card preview is rendered.</param>
     /// <param name="target">The target creature of the card action, if any.</param>
     /// <param name="runGlobalHooks">
-    /// If <see langword="true"/>, routes the base value through <see cref="BaseLibHook.ModifyScryAmount"/> 
+    /// If <see langword="true"/>, routes the base value through <see cref="BaseLibHooks.ModifyScryAmount"/> 
     /// to account for relics, powers, or status effects that alter scry counts.
     /// </param>
     public override void UpdateCardPreview(
@@ -35,7 +35,7 @@ public class ScryVar(decimal baseValue) : DynamicVar("Scry", baseValue)
         if (runGlobalHooks)
         {
             // Passes the value through global listeners (relics, powers, etc.) to get the modified preview total
-            scryAmount = BaseLibHook.ModifyScryAmount(card.Owner, scryAmount, out _);
+            scryAmount = BaseLibHooks.ModifyScryAmount(card.Owner, scryAmount, out _);
         }
             
         PreviewValue = scryAmount;

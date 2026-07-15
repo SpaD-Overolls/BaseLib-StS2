@@ -34,7 +34,7 @@ public interface IAfterScryed
     /// <param name="ctx">Player choice context of the ongoing player decision; each listener is pushed onto it during its invocation.</param>
     /// <param name="player">The player who scryed.</param>
     /// <param name="scryAmount">
-    /// The scry amount after <see cref="BaseLibHook.ModifyScryAmount"/> modifiers, as requested.
+    /// The scry amount after <see cref="BaseLibHooks.ModifyScryAmount"/> modifiers, as requested.
     /// <b>Not</b> clamped to the draw pile size. May exceed the number of cards actually viewed 
     /// (e.g. Scry 5 with 2 cards in the draw pile passes 5).
     /// </param>
@@ -42,10 +42,13 @@ public interface IAfterScryed
     /// Number of cards the player chose to discard; always equals the count of <paramref name="discarded"/>. 
     /// May be 0 when the player kept everything.
     /// </param>
+    /// <param name="seen">
+    /// The cards shown by this scry.
+    /// </param>
     /// <param name="discarded">
     /// The cards discarded by this scry, already added to the discard pile (their per-card discard hooks 
     /// already dispatched) by the time this hook runs. Empty when the player kept everything.
     /// </param>
     /// <returns>A <see cref="Task"/> tracking the asynchronous execution of this follow-up hook logic.</returns>
-    Task AfterScryed(PlayerChoiceContext ctx, Player player, int scryAmount, int discardAmount, IEnumerable<CardModel> discarded);
+    Task AfterScryed(PlayerChoiceContext ctx, Player player, int scryAmount, int discardAmount, List<CardModel> seen, List<CardModel> discarded);
 }

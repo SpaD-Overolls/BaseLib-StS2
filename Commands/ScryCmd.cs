@@ -64,8 +64,8 @@ public static class ScryCmd
     /// </returns>
     public static async Task<ScryResult> Execute(PlayerChoiceContext choiceContext, Player player, int amount)
     {
-        var modifiedAmount = BaseLibHook.ModifyScryAmount(player, amount, out var modifiers);
-        await BaseLibHook.AfterModifyingScryAmount(choiceContext, player, modifiers, amount, modifiedAmount);
+        var modifiedAmount = BaseLibHooks.ModifyScryAmount(player, amount, out var modifiers);
+        await BaseLibHooks.AfterModifyingScryAmount(choiceContext, player, modifiers, amount, modifiedAmount);
 
         if (modifiedAmount <= 0) return default;
         
@@ -98,7 +98,8 @@ public static class ScryCmd
         }
         discardPile.InvokeContentsChanged();
         
-        await BaseLibHook.AfterScryed(choiceContext, player, modifiedAmount, cardsToDiscard.Count, cardsToDiscard);
+        await BaseLibHooks.AfterScryed(choiceContext, player, modifiedAmount, cardsToDiscard.Count, 
+            cardsToScry, cardsToDiscard);
         return new ScryResult(cardsToDiscard);
     }
 }

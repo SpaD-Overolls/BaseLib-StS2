@@ -6,7 +6,7 @@ namespace BaseLib.Hooks;
 /// <summary>
 ///     Hook for models (relics, powers, stances, ...) that adjust the amount of an upcoming scry.
 ///     Listeners are invoked in hook-listener order via
-///     <see cref="BaseLibHook.ModifyScryAmount" /> before the scry resolves.
+///     <see cref="BaseLibHooks.ModifyScryAmount" /> before the scry resolves.
 /// </summary>
 public interface IModifyScryAmount
 {

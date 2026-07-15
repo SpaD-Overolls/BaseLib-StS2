@@ -7,10 +7,10 @@ using MegaCrit.Sts2.Core.Models;
 namespace BaseLib.Hooks;
 
 /// <summary>
-///     Central dispatchers for scry-related hooks. Hook interfaces should be implemented on
+///     Central dispatchers for various hooks. Hook interfaces should be implemented on
 ///     <see cref="AbstractModel" /> subclasses in the active combat state to be picked up.
 /// </summary>
-public static class BaseLibHook
+public static class BaseLibHooks
 {
     /// <summary>
     ///     Dispatches <see cref="IAfterScryed.AfterScryed" /> to all subscribed models after a
@@ -33,14 +33,17 @@ public static class BaseLibHook
     ///     Number of cards the player chose to discard; always equals the count of
     ///     <paramref name="discarded" />. May be 0 when the player kept everything.
     /// </param>
+    /// <param name="seen">
+    ///     The cards shown by this scry.
+    /// </param>
     /// <param name="discarded">
     ///     The cards discarded by this scry, already added to the discard pile (their per-card
     ///     discard hooks already dispatched) by the time this hook runs. Empty when the player
     ///     kept everything.
     /// </param>
-    public static Task AfterScryed(PlayerChoiceContext ctx, Player player, int scryAmount, int discardedAmount, IEnumerable<CardModel> discarded)
+    public static Task AfterScryed(PlayerChoiceContext ctx, Player player, int scryAmount, int discardedAmount, List<CardModel> seen, List<CardModel> discarded)
     {
-        return HookUtils.Dispatch<IAfterScryed>(player.Creature.CombatState, ctx, m => m.AfterScryed(ctx, player, scryAmount, discardedAmount, discarded));
+        return HookUtils.Dispatch<IAfterScryed>(player.Creature.CombatState, ctx, m => m.AfterScryed(ctx, player, scryAmount, discardedAmount, seen, discarded));
     }
 
     /// <summary>
