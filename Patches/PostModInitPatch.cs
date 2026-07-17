@@ -107,15 +107,8 @@ class PostModInitPatch
                 {
                     if (Activator.CreateInstance(type) is IFormatter formatter)
                     {
-                        if (LocManager._smartFormatter != null)
-                        {
-                            LocManager._smartFormatter.AddExtensions(formatter);
-                        }
-                        else
-                        {
-                            AddLaterFormatters.Add(formatter);
-                        }
-                        BaseLibMain.Logger.Info($"Added custom format specifier {type.Name}");
+                        AddLaterFormatters.Add(formatter);
+                        BaseLibMain.Logger.Info($"Instantiated custom format specifier {type.Name} to add later");
                     }
                     else
                     {
@@ -184,7 +177,7 @@ class PostModInitPatch
                 CheckSpecialSpireField(field);
             }
 
-            //TODO - Remove on next beta->main merge; SavedPropertiesTypeCache already loads modded types.
+            //TODO - Remove on next beta->main merge; now already loads modded types.
             if (hasSavedProperty)
             {
                 /*if (SavedPropertiesTypeCache._cache.Count == 0)
